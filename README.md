@@ -12,8 +12,8 @@ plot 画图函数
 将日期转换成时间戳
 1、as.numeric(as.POSIXct("2017-12-05 12:20:00", format="%Y-%m-%d %H:%M:%S"))
 2、as.numeric(as.POSIXct("2017-12-05", format="%Y-%m-%d"))
+3、as.numeric(Sys.time())
 
 将时间戳转换为日期格式
 as.POSIXct(datetime, origin="1970-01-01 00:00:00")
-
 datetime = 1512447600
