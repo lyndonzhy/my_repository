@@ -5,7 +5,13 @@ sum  求和
 sd   求标准差
 mean 求平均值
 cor  求相关系数
-plot 画图函数
+var  求方差函数，要求数值
+cov  求协方差函数，要求数值
+plot 画散点图函数
+pie  画饼图函数
+hist 分布柱状函数，要求数值
+plot(density()) 密度函数
+绘出矩阵各列的散布图 plot(database), pairs(database)
 
 
 时间格式
