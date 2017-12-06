@@ -11,7 +11,8 @@ plot 画散点图函数
 pie  画饼图函数
 hist 分布柱状函数，要求数值
 plot(density()) 密度函数
-绘出矩阵各列的散布图 plot(database), pairs(database)
+plot(database), pairs(database)  绘出矩阵各列的散布图 
+table() 创建一个连续表,在3个聚类中分别统计各种花出现的次数
 
 
 时间格式
