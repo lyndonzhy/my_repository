@@ -24,3 +24,6 @@ table() 创建一个连续表,在3个聚类中分别统计各种花出现的次�
 将时间戳转换为日期格式
 as.POSIXct(datetime, origin="1970-01-01 00:00:00")
 datetime = 1512447600
+
+进swirl教学  library("swirl")  swirl()  
+读取本地csv文件，table <- read.csv('C:/Users/zhangheying/Desktop/data.csv',header = TRUE,sep = ",")
