@@ -4,6 +4,10 @@ readme_edits
 #学习网址
 https://www.cnblogs.com/ywliao/articles/6522971.html
 
+安装函数包
+install.packages("dplyr")
+install.packages("data.table")
+
 sum  求和
 sd   求标准差
 mean 求平均值
@@ -136,4 +140,152 @@ src
 #获取指定表中的数据
 tbl(src, from = 'diff')
 
+
+R data.table 入门
+在下面的操作中，data反映的是data.frame，而flights反映的是data.table形式。
+#构造一个简单数据框
+ID = c("b","b","b","a","a","c")
+a = 1:6
+b = 7:12
+c = 13:18
+data1<-data.frame(ID,a,b,c)
+View(data1)
+备注：
+不像data.frame，data.table中列的类型默认不会转换为因子类型；
+行前面有1:，2:，……形式的行编号；
+data.table中行数显示默认为100，若超过的话，仅仅打印前5行和后5行。
+
+data.table的一般形式如：DT[i, j, by]
+1、针对行进行操作
+library(data.table)
+flights <- fread("flights14.csv")
+flights
+#选取6月，航班从JFK出发的信息
+ans<-flights[origin=='JFK' & month=="6"]
+head(ans)
+如果是数据框的形式呢？
+data<-read.csv("flights14.csv")
+head(data[data$origin=="JFK" & data$month=="6",])
+备注：
+在data.table中，列可以被称为一个变量，不像data.frame必须添加$才可以进行操作；
+在行操作的时候，不需要“，”分割行列，更简洁，更方便，不容易出错。
+
+此外，可以根据行号进行不同行抽提：
+ans <- flights[c(1,3,5)]
+ans
+
+排序操作（origin升序，dest降序）：
+ans <- flights[order(origin, -dest)]
+如果是data.frame你会怎么操作呢？
+library(dplyr)
+data %>% arrange(origin,desc(dest)) %>% head()
+
+data.table包提供setorder()函数进行排序
+odt <- data.table(col = sample(1e7))
+system.time(ans1 <- odt[base::order(col)])
+system.time(ans2 <- setorder(odt,col))
+identical(ans1,ans2)
+
+针对列进行操作
+flights[,arr_delay] %>% head()
+如上：结果返回的一个向量，即实际值。
+如果我们想要让它返回类似数据框的形式呢？
+flights[,list(arr_delay)] %>% head()
+同样，针对data.frame，我们想要获取arr_delay这列数据，该如何操纵？
+data["arr_delay"] %>% head()
+针对flights，如果我们想要获取多列数据呢？
+flights[,.(arr_time,arr_delay)] %>% head()
+flights[,list(arr_time,arr_delay)] %>% head()
+上述两者都可以，你可以尝试一下。
+另外，针对data.frame，同样获取多列，你怎么操作？
+data[c("arr_time","arr_delay")] %>% head()
+当然，在进行列子集抽提时，你也可以更改名字。
+flights[, .(delay_arr = arr_delay, delay_dep = dep_delay)] %>% head()
+flights[, list(delay_arr = arr_delay, delay_dep = dep_delay)] %>% head()
+
+针对列进行某些计算
+ans2 <- flights[, sum((arr_delay + dep_delay) > 0)]
+ans2
+ans3 <- flights[, sum((arr_delay + dep_delay) == 0)]
+ans3
+identical(sum(ans1+ans2+ans3),dim(flights)[1])
+data.table的一般形式：[i, j, by]，其中i代指行 ，j代指列，by进行分组操作。
+我们不仅可以抽提列，同样也可以进行表达式计算。
+
+在data.table中提供了".N"去代替其他列变量。
+ans <- flights[origin == "JFK" & month == 6, .N]
+ans
+
+如果你对data.frame操作已经非常熟练了，那么在data.table中也可以类似进行操作。
+flights[,c("dep_time","dep_delay"),with=F] %>% head()
+data[,c("dep_time","dep_delay")] %>% head()
+为什么用with=F就可以像data.frame那种形式进行操作呢？
+我们知道，在普通数据框的操作中，比如抽提符合某些条件的行，可以用with进行操作，例如：
+DF <- data.frame(x = c(1,1,1,2,2,3,3,3), y = 1:8)
+DF[DF$x > 1, ]
+DF[with(DF, x > 1), ]
+其实，利用with()是将DF中的列看作变量来使用！在data.table中，设定with=F，将data.table中的列回复为数据框的形式。
+
+Aggregations：高级操作
+1、利用by进行分组操作
+ans <- flights[, .(.N), by = .(origin)]
+ans <- flights[, .(.N), by = "origin"]
+ans <- flights[, .N, by = origin]
+ans <- flights[, list(.N), by = .(origin)]
+ans
+是不是很简单，那么针对data你会怎么操作呢？
+data %>% group_by(origin) %>% tally()
+如果我们再添加一些附加条件呢？
+ans <- flights[carrier == "AA", .N, by = origin]
+ans
+ans <- flights[carrier == "AA", .N, by = .(origin,dest)]
+ans <- flights[carrier == "AA", .N, by = list(origin,dest)]
+ans <- flights[carrier == "AA", .N, by = c("origin", "dest")]
+ans
+
+表达式计算【标题】
+ans <- flights[carrier == "AA",list(arr_delay=mean(arr_delay), dep_delay=mean(dep_delay)),by = list(origin, dest, month)]
+ans
+2、利用keyby进行按类别分组操作
+ans <- flights[carrier == "AA",list(mean(arr_delay), mean(dep_delay)), keyby = list(origin, dest, month)]
+ans
+3、chaining（链接）
+ans <- flights[carrier == "AA", .N, by = .(origin, dest)]
+ans <- ans[order(origin, -dest)]
+head(ans)
+在上述操作中，产生不必要的中间变量，我们可以杜绝它。
+ans <- flights[carrier == "AA", .N, by = .(origin, dest)][order(origin, -dest)]
+head(ans)
+4、表达式计算
+ans <- flights[, .N, .(dep_delay>0, arr_delay>0)]
+ans
+5、.SD进行多列操作
+data.table提供一个函数.SD，代表数据的所有子集。
+利用我们前面构造的数据集DT
+DT[, print(.SD), by = ID]
+除了分组变量ID，.SD包含所有的列。
+借助apply族函数R语言中apply函数家族 lapply进行计算：
+DT[, lapply(.SD, mean), by = ID]
+如果我们只是有选择性的针对某些列进行计算，那么就要使用.SDcols函数了。
+flights[carrier == "AA",lapply(.SD, mean),by = .(origin, dest, month),.SDcols = c("arr_delay", "dep_delay")]
+一些更复杂的操作：
+ans <- flights[, head(.SD, 2), by = month]
+head(ans)
+
+其实，记住data.table的一般形式：DT[i, j, by]
+
+针对i、j、by是如何操作的，慢慢就会掌握它的用法。
+
+总结：
+i：行操作，order的使用
+j：列操作
+data.table形式：DT[, .(colA, colB)]
+data.frame形式：DT[, c("colA", "colB"), with = FALSE]
+列计算：DT[, .(sum(colA), mean(colB))]
+DT[, .(sA =sum(colA), mB = mean(colB))]
+行列结合：DT[colA > value, sum(colB)]
+by:
+DT[, lapply(.SD, fun), by = ..., .SDcols = ...]
+DT[, head(.SD, 2), by = ...]
+DT[col > val, head(.SD, 1), by = ...]
 
